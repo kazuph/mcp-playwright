@@ -26,11 +26,16 @@ const snapshot = defineTool({
     name: 'browser_snapshot',
     title: 'Page snapshot',
     description: 'Capture accessibility snapshot of the current page, this is better than screenshot',
-    inputSchema: z.object({}),
+    inputSchema: z.object({
+      isolated: z.boolean().optional().describe('Use isolated browser mode to avoid conflicts with other browser instances. Defaults to false.'),
+    }),
     type: 'readOnly',
   },
 
-  handle: async context => {
+  handle: async (context, params) => {
+    if (params.isolated) {
+      await context.reinitializeWithIsolated();
+    }
     await context.ensureTab();
 
     return {

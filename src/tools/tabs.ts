@@ -24,11 +24,16 @@ const listTabs = defineTool({
     name: 'browser_tab_list',
     title: 'List tabs',
     description: 'List browser tabs',
-    inputSchema: z.object({}),
+    inputSchema: z.object({
+      isolated: z.boolean().optional().describe('Use isolated browser mode to avoid conflicts with other browser instances. Defaults to false.'),
+    }),
     type: 'readOnly',
   },
 
-  handle: async context => {
+  handle: async (context, params) => {
+    if (params.isolated) {
+      await context.reinitializeWithIsolated();
+    }
     await context.ensureTab();
     return {
       code: [`// <internal code to list tabs>`],
@@ -80,11 +85,15 @@ const newTab: ToolFactory = captureSnapshot => defineTool({
     description: 'Open a new tab',
     inputSchema: z.object({
       url: z.string().optional().describe('The URL to navigate to in the new tab. If not provided, the new tab will be blank.'),
+      isolated: z.boolean().optional().describe('Use isolated browser mode to avoid conflicts with other browser instances. Defaults to false.'),
     }),
     type: 'readOnly',
   },
 
   handle: async (context, params) => {
+    if (params.isolated) {
+      await context.reinitializeWithIsolated();
+    }
     await context.newTab();
     if (params.url)
       await context.currentTabOrDie().navigate(params.url);

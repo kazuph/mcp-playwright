@@ -26,16 +26,21 @@ const navigate: ToolFactory = captureSnapshot => defineTool({
     description: 'Navigate to a URL',
     inputSchema: z.object({
       url: z.string().describe('The URL to navigate to'),
+      isolated: z.boolean().optional().describe('Use isolated browser mode to avoid conflicts with other browser instances. Defaults to false.'),
     }),
     type: 'destructive',
   },
 
   handle: async (context, params) => {
+    if (params.isolated) {
+      await context.reinitializeWithIsolated();
+    }
+    
     const tab = await context.ensureTab();
     await tab.navigate(params.url);
 
     const code = [
-      `// Navigate to ${params.url}`,
+      `// Navigate to ${params.url}${params.isolated ? ' (isolated mode)' : ''}`,
       `await page.goto('${params.url}');`,
     ];
 

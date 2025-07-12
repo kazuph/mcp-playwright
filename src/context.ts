@@ -330,6 +330,40 @@ ${code.join('\n')}
     return this._browserContextPromise;
   }
 
+  async reinitializeWithIsolated(): Promise<void> {
+    testDebug('reinitialize browser context with isolated mode');
+    
+    // Close existing browser context if it exists
+    if (this._browserContextPromise) {
+      try {
+        const { close } = await this._browserContextPromise;
+        await close();
+      } catch (error) {
+        testDebug('Error closing existing browser context:', error);
+      }
+      this._browserContextPromise = undefined;
+    }
+
+    // Clear tabs
+    this._tabs = [];
+    this._currentTab = undefined;
+    this._modalStates = [];
+
+    // Import contextFactory to create a new isolated factory
+    const { contextFactory } = await import('./browserContextFactory.js');
+    
+    // Create new browser config with isolated set to true
+    const isolatedBrowserConfig = {
+      ...this.config.browser,
+      isolated: true
+    };
+    
+    // Create new isolated context factory
+    this._browserContextFactory = contextFactory(isolatedBrowserConfig);
+    
+    testDebug('browser context factory recreated with isolated mode');
+  }
+
   private async _setupBrowserContext(): Promise<{ browserContext: playwright.BrowserContext, close: () => Promise<void> }> {
     // TODO: move to the browser context factory to make it based on isolation mode.
     const result = await this._browserContextFactory.createContext();
